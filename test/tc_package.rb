@@ -31,8 +31,8 @@ class TestPackage < Test::Unit::TestCase
       vs.add_selection(:bottom_right, { :active_cell => 'I57', :sqref => 'I57' })
     end
 
-    ws.add_chart(Axlsx::Pie3DChart, :title => "これは？", :start_at => [0,3]) do |chart|
-      chart.add_series :data=>[1,2,3], :labels=>["a", "b", "c"]
+    ws.add_chart(Axlsx::Pie3DChart, :title => "これは？", :start_at => [0, 3]) do |chart|
+      chart.add_series :data => [1, 2, 3], :labels => ["a", "b", "c"]
       chart.d_lbls.show_val = true
       chart.d_lbls.d_lbl_pos = :outEnd
       chart.d_lbls.show_percent = true
@@ -44,23 +44,23 @@ class TestPackage < Test::Unit::TestCase
     end
 
     ws.add_chart(Axlsx::Bar3DChart, :title => 'bar chart') do |chart|
-      chart.add_series :data => [1,4,5], :labels => %w(A B C)
+      chart.add_series :data => [1, 4, 5], :labels => %w(A B C)
       chart.d_lbls.show_percent = true
     end
 
     ws.add_chart(Axlsx::ScatterChart, :title => 'scat man') do |chart|
-      chart.add_series :xData => [1,2,3,4], :yData => [4,3,2,1]
+      chart.add_series :xData => [1, 2, 3, 4], :yData => [4, 3, 2, 1]
       chart.d_lbls.show_val = true
     end
 
     ws.add_chart(Axlsx::BubbleChart, :title => 'bubble chart') do |chart|
-      chart.add_series :xData => [1,2,3,4], :yData => [1,3,2,4]
+      chart.add_series :xData => [1, 2, 3, 4], :yData => [1, 3, 2, 4]
       chart.d_lbls.show_val = true
     end
 
     @fname = 'axlsx_test_serialization.xlsx'
     img = File.expand_path('../../examples/image1.jpeg', __FILE__)
-    ws.add_image(:image_src => img, :noSelect => true, :noMove => true, :hyperlink=>"http://axlsx.blogspot.com") do |image|
+    ws.add_image(:image_src => img, :noSelect => true, :noMove => true, :hyperlink => "http://axlsx.blogspot.com") do |image|
       image.width=720
       image.height=666
       image.hyperlink.tooltip = "Labeled Link"
@@ -92,18 +92,18 @@ class TestPackage < Test::Unit::TestCase
 
   def test_core_accessor
     assert_equal(@package.core, @package.instance_values["core"])
-    assert_raise(NoMethodError) {@package.core = nil }
+    assert_raise(NoMethodError) { @package.core = nil }
   end
 
   def test_app_accessor
     assert_equal(@package.app, @package.instance_values["app"])
-    assert_raise(NoMethodError) {@package.app = nil }
+    assert_raise(NoMethodError) { @package.app = nil }
   end
 
   def test_use_shared_strings
     assert_equal(@package.use_shared_strings, nil)
-    assert_raise(ArgumentError) {@package.use_shared_strings 9}
-    assert_nothing_raised {@package.use_shared_strings = true}
+    assert_raise(ArgumentError) { @package.use_shared_strings 9 }
+    assert_nothing_raised { @package.use_shared_strings = true }
     assert_equal(@package.use_shared_strings, @package.workbook.use_shared_strings)
   end
 
@@ -125,7 +125,7 @@ class TestPackage < Test::Unit::TestCase
       begin
         @package.serialize(@fname)
         zf = Zip::File.open(@fname)
-        @package.send(:parts).each{ |part| zf.get_entry(part[:entry]) }
+        @package.send(:parts).each { |part| zf.get_entry(part[:entry]) }
         File.delete(@fname)
       rescue Errno::EACCES
         puts "WARNING:: test_serialization requires write access."
@@ -154,6 +154,11 @@ class TestPackage < Test::Unit::TestCase
     assert package_1.to_stream.string == package_2.to_stream.string, "zip files are not identical"
   end
 
+  def test_serialization_creates_files_with_excel_mime_type
+    assert_equal('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                 MimeMagic.by_magic(@package.to_stream).type)
+  end
+
   def test_validation
     assert_equal(@package.validate.size, 0, @package.validate)
     Axlsx::Workbook.send(:class_variable_set, :@@date1904, 9900)
@@ -163,22 +168,22 @@ class TestPackage < Test::Unit::TestCase
   def test_parts
     p = @package.send(:parts)
     #all parts have an entry
-    assert_equal(p.select{ |part| part[:entry] =~ /_rels\/\.rels/ }.size, 1, "rels missing")
-    assert_equal(p.select{ |part| part[:entry] =~ /docProps\/core\.xml/ }.size, 1, "core missing")
-    assert_equal(p.select{ |part| part[:entry] =~ /docProps\/app\.xml/ }.size, 1, "app missing")
-    assert_equal(p.select{ |part| part[:entry] =~ /xl\/_rels\/workbook\.xml\.rels/ }.size, 1, "workbook rels missing")
-    assert_equal(p.select{ |part| part[:entry] =~ /xl\/workbook\.xml/ }.size, 1, "workbook missing")
-    assert_equal(p.select{ |part| part[:entry] =~ /\[Content_Types\]\.xml/ }.size, 1, "content types missing")
-    assert_equal(p.select{ |part| part[:entry] =~ /xl\/styles\.xml/ }.size, 1, "styles missin")
-    assert_equal(p.select{ |part| part[:entry] =~ /xl\/drawings\/_rels\/drawing\d\.xml\.rels/ }.size, @package.workbook.drawings.size, "one or more drawing rels missing")
-    assert_equal(p.select{ |part| part[:entry] =~ /xl\/drawings\/drawing\d\.xml/ }.size, @package.workbook.drawings.size, "one or more drawings missing")
-    assert_equal(p.select{ |part| part[:entry] =~ /xl\/charts\/chart\d\.xml/ }.size, @package.workbook.charts.size, "one or more charts missing")
-    assert_equal(p.select{ |part| part[:entry] =~ /xl\/worksheets\/sheet\d\.xml/ }.size, @package.workbook.worksheets.size, "one or more sheet missing")
-    assert_equal(p.select{ |part| part[:entry] =~ /xl\/worksheets\/_rels\/sheet\d\.xml\.rels/ }.size, @package.workbook.worksheets.size, "one or more sheet rels missing")
-    assert_equal(p.select{ |part| part[:entry] =~ /xl\/comments\d\.xml/ }.size, @package.workbook.worksheets.size, "one or more sheet rels missing")
-    assert_equal(p.select{ |part| part[:entry] =~ /xl\/pivotTables\/pivotTable\d\.xml/ }.size, @package.workbook.worksheets.first.pivot_tables.size, "one or more pivot tables missing")
-    assert_equal(p.select{ |part| part[:entry] =~ /xl\/pivotTables\/_rels\/pivotTable\d\.xml.rels/ }.size, @package.workbook.worksheets.first.pivot_tables.size, "one or more pivot tables rels missing")
-    assert_equal(p.select{ |part| part[:entry] =~ /xl\/pivotCache\/pivotCacheDefinition\d\.xml/ }.size, @package.workbook.worksheets.first.pivot_tables.size, "one or more pivot tables missing")
+    assert_equal(p.select { |part| part[:entry] =~ /_rels\/\.rels/ }.size, 1, "rels missing")
+    assert_equal(p.select { |part| part[:entry] =~ /docProps\/core\.xml/ }.size, 1, "core missing")
+    assert_equal(p.select { |part| part[:entry] =~ /docProps\/app\.xml/ }.size, 1, "app missing")
+    assert_equal(p.select { |part| part[:entry] =~ /xl\/_rels\/workbook\.xml\.rels/ }.size, 1, "workbook rels missing")
+    assert_equal(p.select { |part| part[:entry] =~ /xl\/workbook\.xml/ }.size, 1, "workbook missing")
+    assert_equal(p.select { |part| part[:entry] =~ /\[Content_Types\]\.xml/ }.size, 1, "content types missing")
+    assert_equal(p.select { |part| part[:entry] =~ /xl\/styles\.xml/ }.size, 1, "styles missin")
+    assert_equal(p.select { |part| part[:entry] =~ /xl\/drawings\/_rels\/drawing\d\.xml\.rels/ }.size, @package.workbook.drawings.size, "one or more drawing rels missing")
+    assert_equal(p.select { |part| part[:entry] =~ /xl\/drawings\/drawing\d\.xml/ }.size, @package.workbook.drawings.size, "one or more drawings missing")
+    assert_equal(p.select { |part| part[:entry] =~ /xl\/charts\/chart\d\.xml/ }.size, @package.workbook.charts.size, "one or more charts missing")
+    assert_equal(p.select { |part| part[:entry] =~ /xl\/worksheets\/sheet\d\.xml/ }.size, @package.workbook.worksheets.size, "one or more sheet missing")
+    assert_equal(p.select { |part| part[:entry] =~ /xl\/worksheets\/_rels\/sheet\d\.xml\.rels/ }.size, @package.workbook.worksheets.size, "one or more sheet rels missing")
+    assert_equal(p.select { |part| part[:entry] =~ /xl\/comments\d\.xml/ }.size, @package.workbook.worksheets.size, "one or more sheet rels missing")
+    assert_equal(p.select { |part| part[:entry] =~ /xl\/pivotTables\/pivotTable\d\.xml/ }.size, @package.workbook.worksheets.first.pivot_tables.size, "one or more pivot tables missing")
+    assert_equal(p.select { |part| part[:entry] =~ /xl\/pivotTables\/_rels\/pivotTable\d\.xml.rels/ }.size, @package.workbook.worksheets.first.pivot_tables.size, "one or more pivot tables rels missing")
+    assert_equal(p.select { |part| part[:entry] =~ /xl\/pivotCache\/pivotCacheDefinition\d\.xml/ }.size, @package.workbook.worksheets.first.pivot_tables.size, "one or more pivot tables missing")
 
 
     #no mystery parts
@@ -189,7 +194,7 @@ class TestPackage < Test::Unit::TestCase
   def test_shared_strings_requires_part
     @package.use_shared_strings = true
     p = @package.send(:parts)
-    assert_equal(p.select{ |part| part[:entry] =~/xl\/sharedStrings.xml/}.size, 1, "shared strings table missing")
+    assert_equal(p.select { |part| part[:entry] =~/xl\/sharedStrings.xml/ }.size, 1, "shared strings table missing")
   end
 
   def test_workbook_is_a_workbook
@@ -214,8 +219,8 @@ class TestPackage < Test::Unit::TestCase
   end
 
   def test_name_to_indices
-    assert(Axlsx::name_to_indices('A1') == [0,0])
-    assert(Axlsx::name_to_indices('A100') == [0,99], 'needs to axcept rows that contain 0')
+    assert(Axlsx::name_to_indices('A1') == [0, 0])
+    assert(Axlsx::name_to_indices('A100') == [0, 99], 'needs to axcept rows that contain 0')
   end
 
   def test_to_stream
